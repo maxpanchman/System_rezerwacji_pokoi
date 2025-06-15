@@ -1,71 +1,177 @@
 import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
-import { Low } from 'lowdb';
-import { JSONFile } from 'lowdb/node';
 import { nanoid } from 'nanoid';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(
-    import.meta.url);
-const __dirname = path.dirname(__filename);
+import db from './db.js';
+import bcrypt from 'bcrypt';
 
 const app = express();
-const PORT = 3000;
-
-// Add CSP headers
-app.use((req, res, next) => {
-    res.setHeader(
-        'Content-Security-Policy',
-        "default-src 'self'; " +
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
-        "style-src 'self' 'unsafe-inline'; " +
-        "img-src 'self' data:; " +
-        "font-src 'self' data:; " +
-        "connect-src 'self'"
-    );
-    next();
-});
+const port = 3000;
 
 app.use(cors());
 app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static('public'));
 
-// Handle favicon.ico
-app.get('/favicon.ico', (req, res) => {
-    res.status(204).end(); // No content
-});
+// Middleware для перевірки авторизації
+const checkAuth = (req, res, next) => {
+    console.log('Checking auth headers:', req.headers);
 
-const adapter = new JSONFile("db.json");
-const db = new Low(adapter, { reviews: [] });
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        console.log('No Bearer token found');
+        return res.status(401).json({ error: 'Unauthorized - No token provided' });
+    }
 
-// GET endpoint for reviews
-app.get("/reviews", async(req, res) => {
-    await db.read();
-    res.json(db.data.reviews);
-});
+    const token = authHeader.split(' ')[1];
+    if (!token) {
+        console.log('Invalid token format');
+        return res.status(401).json({ error: 'Unauthorized - Invalid token format' });
+    }
 
-// POST endpoint for adding new reviews
-app.post("/reviews", async(req, res) => {
-    const { roomNumber, email, body } = req.body;
-    const newReview = {
+    console.log('Looking for user with token:', token);
+    const user = db.data.users.find(u => u.token === token);
+    if (!user) {
+        console.log('No user found with this token');
+        return res.status(401).json({ error: 'Unauthorized - Invalid token' });
+    }
+
+    console.log('User found:', user.username);
+    req.user = user;
+    next();
+};
+
+// Реєстрація
+app.post('/register', async(req, res) => {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+        return res.status(400).json({ error: 'Username and password are required' });
+    }
+
+    if (db.data.users.some(u => u.username === username)) {
+        return res.status(400).json({ error: 'Username already exists' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const token = nanoid();
+
+    const user = {
         id: nanoid(),
-        roomNumber,
-        email,
-        body,
+        username,
+        password: hashedPassword,
+        token
     };
-    await db.read();
-    db.data.reviews.push(newReview);
+
+    db.data.users.push(user);
     await db.write();
-    res.json({ message: "Review added.", review: newReview });
+
+    res.json({ token, username });
 });
 
-// Serve index.html for the root route
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// Логін
+app.post('/login', async(req, res) => {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+        return res.status(400).json({ error: 'Username and password are required' });
+    }
+
+    const user = db.data.users.find(u => u.username === username);
+    if (!user) {
+        return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    const validPassword = await bcrypt.compare(password, user.password);
+    if (!validPassword) {
+        return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    res.json({ token: user.token, username: user.username });
 });
 
-app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
+// Отримання відгуків
+app.get('/reviews', (req, res) => {
+    const { roomNumber } = req.query;
+    let reviews = db.data.reviews;
+
+    if (roomNumber) {
+        reviews = reviews.filter(review => review.roomNumber === parseInt(roomNumber));
+    }
+
+    res.json(reviews);
 });
+
+// Отримання конкретного відгуку
+app.get('/reviews/:id', (req, res) => {
+    const review = db.data.reviews.find(r => r.id === req.params.id);
+    if (!review) {
+        return res.status(404).json({ error: 'Review not found' });
+    }
+    res.json(review);
+});
+
+// Редагування відгуку
+app.put('/reviews/:id', checkAuth, async(req, res) => {
+    const { id } = req.params;
+    const { email, roomNumber, body } = req.body;
+
+    if (!email || !roomNumber || !body) {
+        return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    const reviewIndex = db.data.reviews.findIndex(r => r.id === id);
+    if (reviewIndex === -1) {
+        return res.status(404).json({ error: 'Review not found' });
+    }
+
+    // Перевіряємо, чи користувач є автором відгуку
+    if (db.data.reviews[reviewIndex].username !== req.user.username) {
+        return res.status(403).json({ error: 'You can only edit your own reviews' });
+    }
+
+    const updatedReview = {
+        ...db.data.reviews[reviewIndex],
+        email,
+        roomNumber: parseInt(roomNumber),
+        body,
+        updatedAt: new Date().toISOString()
+    };
+
+    db.data.reviews[reviewIndex] = updatedReview;
+    await db.write();
+
+    res.json(updatedReview);
+});
+
+// Додавання відгуку (тільки для авторизованих)
+app.post('/reviews', checkAuth, (req, res) => {
+    const { roomNumber, rating, comment } = req.body;
+
+    if (!roomNumber || !rating || !comment) {
+        return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    const review = {
+        id: nanoid(),
+        roomNumber: parseInt(roomNumber),
+        rating: parseInt(rating),
+        comment,
+        username: req.user.username,
+        date: new Date().toISOString()
+    };
+
+    db.data.reviews.push(review);
+    db.write();
+
+    res.json(review);
+});
+
+(async() => {
+    await db.read();
+    if (!db.data) db.data = { reviews: [], users: [] };
+    await db.write();
+
+    app.listen(port, () => {
+        console.log(`Server running at http://localhost:${port}`);
+    });
+})();

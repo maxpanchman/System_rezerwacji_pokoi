@@ -107,5 +107,21 @@
     cursor: not-allowed;
 }
 
+.review button {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-top: 10px;
+    transition: background 0.3s;
+}
+
+.review button:hover {
+    background: #218838;
+}
+
 
 /*# sourceMappingURL=style.css.map */

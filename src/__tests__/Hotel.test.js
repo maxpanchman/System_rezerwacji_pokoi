@@ -43,3 +43,8 @@ test('saveReservations() and loadReservations() work with localStorage', () => {
     expect(hotel2.rooms[0].isAvailable).toBe(false);
     expect(hotel2.rooms[1].isAvailable).toBe(true);
 });
+
+window.addReview = addReview;
+
+const reviewsList = document.getElementById("reviewsList");
+reviewsList.innerHTML = ...;
