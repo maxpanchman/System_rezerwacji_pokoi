@@ -166,6 +166,19 @@ app.post('/reviews', checkAuth, (req, res) => {
     res.json(review);
 });
 
+// Usuwanie recenzji
+app.delete('/reviews/:id', async(req, res) => {
+    const { id } = req.params;
+    await db.read();
+    const index = db.data.reviews.findIndex(r => r.id === id);
+    if (index === -1) {
+        return res.status(404).json({ message: 'Review not found.' });
+    }
+    db.data.reviews.splice(index, 1);
+    await db.write();
+    res.json({ message: 'Review deleted.' });
+});
+
 (async() => {
     await db.read();
     if (!db.data) db.data = { reviews: [], users: [] };

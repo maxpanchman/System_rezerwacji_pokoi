@@ -62,4 +62,26 @@ export class UI {
     static refreshRooms(rooms, currentUser) {
         this.showRooms(rooms, currentUser);
     }
+
+    static renderRooms(rooms, reviews) {
+        const container = document.getElementById('rooms-list');
+        container.innerHTML = '';
+        rooms.forEach(room => {
+            const roomDiv = document.createElement('div');
+            roomDiv.className = 'room';
+            if (!room.isAvailable) roomDiv.classList.add('booked');
+            if (room.premiumService) roomDiv.classList.add('premium-room');
+            const bookedBy = room.bookedBy ? `<p><strong>Booked by:</strong> ${room.bookedBy}</p>` : "";
+            // Liczba recenzji
+            const count = reviews.filter(r => r.roomNumber === room.number).length;
+            const reviewsText = count === 0 ? 'No reviews yet' : `${count} review${count > 1 ? 's' : ''}`;
+            roomDiv.innerHTML = `Pokój nr ${room.number}, typ: ${room.type}, dostępny: ${room.isAvailable}${bookedBy}<p>Reviews: ${reviewsText}</p>`;
+            // Przycisk rezerwacji
+            const reserveBtn = document.createElement('button');
+            reserveBtn.textContent = 'Rezerwuj';
+            reserveBtn.onclick = () => window.bookRoom(room);
+            roomDiv.appendChild(reserveBtn);
+            container.appendChild(roomDiv);
+        });
+    }
 }

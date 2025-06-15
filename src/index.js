@@ -128,6 +128,7 @@ async function loadReviews(roomNumber) {
                 <p>${review.comment}</p>
                 <small>By ${review.username} on ${new Date(review.date).toLocaleDateString()}</small>
                 ${token ? `<button onclick="editReview('${review.id}')">Edit</button>` : ''}
+                ${token ? `<button onclick="deleteReview('${review.id}', ${review.roomNumber})">Delete</button>` : ''}
             `;
             reviewsList.appendChild(reviewElement);
         });
@@ -359,5 +360,40 @@ document.getElementById('logout-btn').addEventListener('click', () => {
 // Ініціалізуємо UI при завантаженні
 document.addEventListener('DOMContentLoaded', () => {
     updateAuthUI();
-    loadReviews();
+    loadRoomsWithReviews();
 });
+
+window.deleteReview = async function(id, roomNumber) {
+    const confirmed = confirm("Are you sure?");
+    if (!confirmed) return;
+    const token = localStorage.getItem('token');
+    try {
+        const response = await fetch(`http://localhost:3000/reviews/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to delete review');
+        }
+        alert('Review deleted!');
+        loadReviews(roomNumber);
+    } catch (error) {
+        alert(error.message);
+    }
+};
+
+async function loadRoomsWithReviews() {
+    try {
+        const response = await fetch('http://localhost:3000/reviews');
+        if (!response.ok) {
+            throw new Error('Failed to load reviews');
+        }
+        const reviews = await response.json();
+        UI.renderRooms(hotel.rooms, reviews);
+    } catch (error) {
+        console.error('Error loading rooms with reviews:', error);
+    }
+}
