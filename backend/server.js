@@ -1,9 +1,10 @@
 import express from 'express';
+import { Low } from 'lowdb';
+import { JSONFile } from 'lowdb/node';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import { nanoid } from 'nanoid';
-import db from './db.js';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 const app = express();
 const port = 3000;
@@ -11,6 +12,9 @@ const port = 3000;
 app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static('public'));
+
+const adapter = new JSONFile('db.json');
+const db = new Low(adapter, { reviews: [], users: [] });
 
 // Middleware для перевірки авторизації
 const checkAuth = (req, res, next) => {
@@ -40,35 +44,39 @@ const checkAuth = (req, res, next) => {
     next();
 };
 
-// Реєстрація
-app.post('/register', async(req, res) => {
+// Реєстрація користувача
+app.post('/signup', async(req, res) => {
     const { username, password } = req.body;
 
     if (!username || !password) {
         return res.status(400).json({ error: 'Username and password are required' });
     }
 
-    if (db.data.users.some(u => u.username === username)) {
+    await db.read();
+
+    // Перевірка чи користувач вже існує
+    const existingUser = db.data.users.find(u => u.username === username);
+    if (existingUser) {
         return res.status(400).json({ error: 'Username already exists' });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const token = nanoid();
+    // Хешування паролю
+    const hashedPassword = bcrypt.hashSync(password, 10);
 
-    const user = {
+    // Створення нового користувача
+    const newUser = {
         id: nanoid(),
         username,
-        password: hashedPassword,
-        token
+        password: hashedPassword
     };
 
-    db.data.users.push(user);
+    db.data.users.push(newUser);
     await db.write();
 
-    res.json({ token, username });
+    res.status(201).json({ message: 'User registered successfully' });
 });
 
-// Логін
+// Логін користувача
 app.post('/login', async(req, res) => {
     const { username, password } = req.body;
 
@@ -76,17 +84,30 @@ app.post('/login', async(req, res) => {
         return res.status(400).json({ error: 'Username and password are required' });
     }
 
+    await db.read();
+
+    // Пошук користувача
     const user = db.data.users.find(u => u.username === username);
     if (!user) {
-        return res.status(401).json({ error: 'Invalid credentials' });
+        return res.status(401).json({ error: 'Invalid username or password' });
     }
 
-    const validPassword = await bcrypt.compare(password, user.password);
-    if (!validPassword) {
-        return res.status(401).json({ error: 'Invalid credentials' });
+    // Перевірка паролю
+    const isValidPassword = bcrypt.compareSync(password, user.password);
+    if (!isValidPassword) {
+        return res.status(401).json({ error: 'Invalid username or password' });
     }
 
-    res.json({ token: user.token, username: user.username });
+    // Генерація токену
+    const token = nanoid();
+    user.token = token;
+    await db.write();
+
+    res.json({
+        message: 'Login successful',
+        username: user.username,
+        token
+    });
 });
 
 // Отримання відгуків
