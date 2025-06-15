@@ -38,7 +38,14 @@ const config = {
                         "module": "es6" // override `tsconfig.json` so that TypeScript emits native JavaScript modules.
                     }
                 }
-            }]
+            }],
+        }, {
+            test: /\.scss$/,
+            use: [
+                'style-loader',
+                'css-loader',
+                'sass-loader'
+            ],
         }]
     },
     mode: 'development'

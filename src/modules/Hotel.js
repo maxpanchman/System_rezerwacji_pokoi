@@ -16,10 +16,11 @@ export class Hotel {
         return this.rooms.filter(room => room.isAvailable);
     }
 
-    reserveRoom(number) {
+    reserveRoom(number, bookedBy) {
         const room = this.rooms.find(r => r.number === number && r.isAvailable);
         if (room) {
             room.reserve();
+            room.bookedBy = bookedBy;
             this.saveReservations();
             return true;
         }
@@ -27,15 +28,20 @@ export class Hotel {
     }
 
     saveReservations() {
-        const reserved = this.rooms.filter(r => !r.isAvailable).map(r => r.number);
+        const reserved = this.rooms.filter(r => !r.isAvailable).map(r => ({
+            number: r.number,
+            bookedBy: r.bookedBy || null
+        }));
         localStorage.setItem('reservedRooms', JSON.stringify(reserved));
     }
 
     loadReservations() {
         const reserved = JSON.parse(localStorage.getItem('reservedRooms') || '[]');
         this.rooms.forEach(room => {
-            if (reserved.includes(room.number)) {
+            const found = reserved.find(r => r.number === room.number);
+            if (found) {
                 room.isAvailable = false;
+                room.bookedBy = found.bookedBy;
             }
         });
     }

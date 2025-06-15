@@ -4,10 +4,18 @@
 <head>
     <meta charset="UTF-8">
     <title>System rezerwacji pokoi</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
     <h1>System rezerwacji pokoi</h1>
+    <div id="auth">
+        <input id="username" placeholder="Username" />
+        <input id="password" type="password" placeholder="Password" />
+        <button onclick="registerUser()">Register</button>
+        <button onclick="loginUser()">Login</button>
+        <p id="authStatus"></p>
+    </div>
     <script src="dist/bundle.js"></script>
 </body>
 
