@@ -101,3 +101,62 @@ document.addEventListener('DOMContentLoaded', () => {
         UI.showRooms(hotel.rooms);
     }
 });
+
+async function loadReviews(number) {
+    try {
+        const response = await fetch('http://localhost:3000/reviews');
+        const reviews = await response.json();
+        const sample = reviews
+            .filter(r => r.roomNumber === number)
+            .slice(0, 3);
+
+        const reviewsContainer = document.querySelector(`#room-${number} .reviews`);
+        reviewsContainer.innerHTML = '';
+
+        sample.forEach(review => {
+            const reviewElement = document.createElement('div');
+            reviewElement.className = 'review';
+            reviewElement.innerHTML = `
+                <p class="review-text">${review.body}</p>
+                <p class="review-author">${review.email}</p>
+            `;
+            reviewsContainer.appendChild(reviewElement);
+        });
+    } catch (error) {
+        console.error('Error loading reviews:', error);
+    }
+}
+
+global.addReview = async function() {
+    const email = document.getElementById("reviewEmail").value.trim();
+    const roomNumber = parseInt(document.getElementById("reviewRoom").value.trim());
+    const body = document.getElementById("reviewBody").value.trim();
+
+    if (!email || !roomNumber || !body) {
+        alert('Please fill in all fields');
+        return;
+    }
+
+    try {
+        const response = await fetch('http://localhost:3000/reviews', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ roomNumber, email, body })
+        });
+
+        if (response.ok) {
+            alert('Review added!');
+            // Clear form
+            document.getElementById("reviewEmail").value = '';
+            document.getElementById("reviewRoom").value = '';
+            document.getElementById("reviewBody").value = '';
+            // Reload reviews for the room
+            loadReviews(roomNumber);
+        } else {
+            alert('Failed to add review.');
+        }
+    } catch (error) {
+        console.error('Error adding review:', error);
+        alert('Error adding review. Please try again.');
+    }
+};

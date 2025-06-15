@@ -1,0 +1,35 @@
+.room {
+  padding: 16px;
+  margin: 12px 0;
+  border-radius: 8px;
+  background-color: #a8e6cf;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: background 0.3s, border 0.3s;
+}
+.room.booked {
+  background-color: #ff8b94;
+  opacity: 0.7;
+}
+.room.premium-room {
+  border: 2px dashed #ffd3b6;
+  background-color: white;
+}
+.room .reviews {
+  margin-top: 10px;
+  font-size: 0.95em;
+  color: #333;
+}
+.room button {
+  margin: 0 8px 0 0;
+  padding: 6px 14px;
+  border: none;
+  border-radius: 4px;
+  background: #333;
+  color: #fff;
+  cursor: pointer;
+}
+.room button:hover {
+  background: #222;
+}
+
+/*# sourceMappingURL=style.css.map */
