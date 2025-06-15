@@ -17,13 +17,26 @@
         <button onclick="loginUser()">Login</button>
         <p id="authStatus"></p>
     </div>
+
     <div class="review-form">
         <h3>Add Your Review</h3>
-        <input type="text" id="reviewEmail" placeholder="Your email">
-        <input type="number" id="reviewRoom" placeholder="Room number">
-        <textarea id="reviewBody" placeholder="Your review"></textarea>
-        <button onclick="addReview()">Add Review</button>
+        <form id="reviewForm" onsubmit="return false;">
+            <div class="form-group">
+                <label for="reviewEmail">Email:</label>
+                <input type="email" id="reviewEmail" placeholder="Your email" required>
+            </div>
+            <div class="form-group">
+                <label for="reviewRoom">Room Number:</label>
+                <input type="number" id="reviewRoom" placeholder="Room number" required min="1">
+            </div>
+            <div class="form-group">
+                <label for="reviewBody">Your Review:</label>
+                <textarea id="reviewBody" placeholder="Write your review here..." required></textarea>
+            </div>
+            <button type="submit" onclick="addReview()">Add Review</button>
+        </form>
     </div>
+
     <script src="/bundle.js"></script>
 </body>
 

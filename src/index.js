@@ -127,36 +127,61 @@ async function loadReviews(number) {
     }
 }
 
-global.addReview = async function() {
+async function addReview() {
+    // Get form values
     const email = document.getElementById("reviewEmail").value.trim();
     const roomNumber = parseInt(document.getElementById("reviewRoom").value.trim());
     const body = document.getElementById("reviewBody").value.trim();
 
+    // Validate input
     if (!email || !roomNumber || !body) {
-        alert('Please fill in all fields');
+        alert("Please fill in all fields");
         return;
     }
 
+    if (isNaN(roomNumber) || roomNumber < 1) {
+        alert("Please enter a valid room number");
+        return;
+    }
+
+    // Disable submit button
+    const submitButton = document.querySelector("#reviewForm button[type='submit']");
+    submitButton.disabled = true;
+
     try {
+        // Send review to backend
         const response = await fetch('http://localhost:3000/reviews', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ roomNumber, email, body })
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                email,
+                roomNumber,
+                body
+            })
         });
 
         if (response.ok) {
-            alert('Review added!');
             // Clear form
             document.getElementById("reviewEmail").value = '';
             document.getElementById("reviewRoom").value = '';
             document.getElementById("reviewBody").value = '';
+
+            // Show success message
+            alert("Review added successfully!");
+
             // Reload reviews for the room
             loadReviews(roomNumber);
         } else {
-            alert('Failed to add review.');
+            const error = await response.json();
+            alert(`Failed to add review: ${error.message || 'Unknown error'}`);
         }
     } catch (error) {
         console.error('Error adding review:', error);
         alert('Error adding review. Please try again.');
+    } finally {
+        // Re-enable submit button
+        submitButton.disabled = false;
     }
-};
+}
