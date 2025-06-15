@@ -1,10 +1,10 @@
-export class Room {#
-    creditCardNumber;
+export class Room {
+    _creditCardNumber;
     constructor(number, type, isAvailable = true) {
         this.number = number;
         this.type = type;
         this.isAvailable = isAvailable;
-        this.#creditCardNumber = null;
+        this._creditCardNumber = null;
     }
 
     reserve() {
@@ -16,11 +16,11 @@ export class Room {#
         if (numStr.length !== 16) {
             throw new Error('Numer karty musi mieć dokładnie 16 cyfr.');
         }
-        this.#creditCardNumber = numStr;
+        this._creditCardNumber = numStr;
     }
 
     getMaskedCardNumber() {
-        if (!this.#creditCardNumber) return null;
-        return '**** **** **** ' + this.#creditCardNumber.slice(-4);
+        if (!this._creditCardNumber) return null;
+        return '**** **** **** ' + this._creditCardNumber.slice(-4);
     }
 }

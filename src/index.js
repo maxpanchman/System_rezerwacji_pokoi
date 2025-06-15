@@ -2,8 +2,8 @@ import './style.scss';
 import { Hotel } from './modules/Hotel.js';
 import { Room } from './modules/Room.js';
 import { PremiumRoom } from './modules/PremiumRoom.js';
-import { UI } from './modules/UI.js';
-import { UserManager } from './modules/UserManager.js';
+import { UI } from './services/UI.js';
+import { UserManager } from './services/UserManager.js';
 
 const hotel = new Hotel('Hotel Warszawa');
 const userManager = new UserManager();
@@ -13,6 +13,11 @@ if (hotel.rooms.length === 0) {
     hotel.addRoom(new Room(101, 'single'));
     hotel.addRoom(new Room(102, 'double'));
     hotel.addRoom(new PremiumRoom(201, 'suite', 'Darmowe śniadanie'));
+}
+
+const savedUser = sessionStorage.getItem('loggedInUser');
+if (savedUser) {
+    currentUser = userManager.users.find(u => u.username === JSON.parse(savedUser).username);
 }
 
 window.registerUser = function() {
@@ -65,9 +70,27 @@ window.bookRoom = function(room) {
     }
 };
 
+window.logoutUser = function() {
+    sessionStorage.removeItem('loggedInUser');
+    currentUser = null;
+    updateAuthStatus();
+    UI.refreshRooms(hotel.rooms, currentUser);
+};
+
+window.cancelRoom = function(room) {
+    if (!currentUser || room.bookedBy !== currentUser.username) {
+        alert('Możesz anulować tylko swoją rezerwację!');
+        return;
+    }
+    room.isAvailable = true;
+    room.bookedBy = null;
+    hotel.saveReservations();
+    UI.refreshRooms(hotel.rooms, currentUser);
+};
+
 document.addEventListener('DOMContentLoaded', () => {
     updateAuthStatus();
-    UI.showRooms(hotel.rooms);
+    UI.showRooms(hotel.rooms, currentUser);
 });
 
 // Example reservation and saving to localStorage

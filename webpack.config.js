@@ -7,10 +7,16 @@
 
 'use strict';
 
-const path = require('path');
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(
+    import.meta.url);
+const __dirname = dirname(__filename);
 
 /**@type {import('webpack').Configuration}*/
-const config = {
+export default {
     target: 'node', // vscode extensions run in a Node.js-context 📖 -> https://webpack.js.org/configuration/node/
 
     entry: './src/index.js', // the entry point of this extension, 📖 -> https://webpack.js.org/configuration/entry-context/
@@ -46,9 +52,13 @@ const config = {
                 'css-loader',
                 'sass-loader'
             ],
+        }, {
+            test: /\.js$/,
+            exclude: /node_modules/,
+            use: {
+                loader: 'babel-loader'
+            }
         }]
     },
     mode: 'development'
 }
-
-module.exports = config;
