@@ -23,4 +23,8 @@ export class Room {
         if (!this._creditCardNumber) return null;
         return '**** **** **** ' + this._creditCardNumber.slice(-4);
     }
+
+    cancelBooking() {
+        this.isAvailable = true;
+    }
 }
