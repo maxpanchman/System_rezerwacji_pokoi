@@ -1,0 +1,54 @@
+{
+	"name": "webpack-sample",
+	"displayName": "webpack-sample",
+	"description": "This is an extension that uses [https://webpack.js.org]() to bundle and minify its sources. Using webpack will help to reduce the install- and startup-time of large extensions because instead of hundreds of files, a single file is produced.",
+	"version": "0.0.1",
+	"publisher": "vscode-samples",
+	"private": true,
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/Microsoft/vscode-extension-samples.git"
+	},
+	"engines": {
+		"vscode": "^1.74.0"
+	},
+	"categories": [
+		"Other"
+	],
+	"activationEvents": [],
+	"main": "./dist/extension",
+	"contributes": {
+		"commands": [
+			{
+				"command": "extension.helloWebpack",
+				"title": "Hello Webpack"
+			}
+		]
+	},
+	"scripts": {
+		"vscode:prepublish": "webpack --mode production",
+		"webpack": "webpack --mode development",
+		"webpack-dev": "webpack --mode development --watch",
+		"test-compile": "tsc -p ./",
+		"lint": "eslint"
+	},
+	"devDependencies": {
+		"@eslint/js": "^9.13.0",
+		"@stylistic/eslint-plugin": "^2.9.0",
+		"@types/node": "^20",
+		"@types/vscode": "^1.73.0",
+		"eslint": "^9.13.0",
+		"ts-loader": "^7.0.5",
+		"typescript": "^5.8.2",
+		"typescript-eslint": "^8.26.0",
+		"webpack": "^5.99.9",
+		"webpack-cli": "^5.1.4"
+	},
+	"keywords": [],
+	"author": "",
+	"bugs": {
+		"url": "https://github.com/Microsoft/vscode-extension-samples/issues"
+	},
+	"homepage": "https://github.com/Microsoft/vscode-extension-samples#readme"
+}
